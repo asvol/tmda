@@ -1,8 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection.Emit;
+using System.Threading;
 using Asv.Tmda.Core;
 using NLog;
+using NLog.Targets;
 
 namespace Asv.Tmda.SignalHound
 {
@@ -121,6 +125,8 @@ namespace Asv.Tmda.SignalHound
         private double _centerFreqHz;
         private double _bandwidth;
         private SampleRateLimit _sampleRate;
+        private double _refLevel;
+        private double _prevLevel;
 
         public BbAnalyzerIq(int serialNumber)
         {
@@ -132,7 +138,6 @@ namespace Asv.Tmda.SignalHound
             _logger.Info($"Open device SN {_serialNumber}");
             InternalCheckStatus(bb_api.bbOpenDeviceBySerialNumber(ref _deviceHandle, _serialNumber));
             _logger.Info("API Version: " + bb_api.bbGetDeviceName(_deviceHandle));
-            _logger.Info("Device Type: " + bb_api.bbGetSerialString(_deviceHandle));
             _logger.Info("Serial Number: " + bb_api.bbGetSerialString(_deviceHandle));
             _logger.Info("Firmware Version: " + bb_api.bbGetFirmwareString(_deviceHandle));
         }
@@ -147,15 +152,22 @@ namespace Asv.Tmda.SignalHound
             return _limits;
         }
 
+        protected override void InternalSetFreq(double freqHz)
+        {
+            InternalCheckStatus(bb_api.bbConfigureCenterSpan(_deviceHandle, freqHz, 350));
+            InternalCheckStatus(bb_api.bbInitiate(_deviceHandle, bb_api.BB_STREAMING, bb_api.BB_STREAM_IQ));
+            Thread.Sleep(50);
+        }
+
         protected override void InternalSetConfig(AnalyzerIqConfig cfg)
         {
             _centerFreqHz = cfg.CenterFrequencyHz;
 
             _sampleRate =  _limits.SampleRates.FirstOrDefault(_ => _.Decimation == cfg.Decimation);
             if (_sampleRate == null) throw new Exception($"Wrong decimation value {cfg.Decimation}. Available values: {string.Join(",", _limits.SampleRates.Select(_=>_.Decimation))}");
-
+            _refLevel = -130;
             InternalCheckStatus(bb_api.bbConfigureCenterSpan(_deviceHandle, cfg.CenterFrequencyHz, 350));
-            InternalCheckStatus(bb_api.bbConfigureLevel(_deviceHandle, cfg.RefLevel, bb_api.BB_AUTO_ATTEN));
+            InternalCheckStatus(bb_api.bbConfigureLevel(_deviceHandle, _refLevel, bb_api.BB_AUTO_ATTEN));
             InternalCheckStatus(bb_api.bbConfigureGain(_deviceHandle, bb_api.BB_AUTO_GAIN));
             InternalCheckStatus(bb_api.bbConfigureIQ(_deviceHandle, cfg.Decimation, cfg.BandwidthHz));
             InternalCheckStatus(bb_api.bbInitiate(_deviceHandle, bb_api.BB_STREAMING, bb_api.BB_STREAM_IQ));
@@ -163,9 +175,7 @@ namespace Asv.Tmda.SignalHound
             _bandwidth = 0.0;
             var samplesPerSec = 0;
             InternalCheckStatus(bb_api.bbQueryStreamInfo(_deviceHandle, ref unused, ref _bandwidth, ref samplesPerSec));
-
             Debug.Assert(Math.Abs(_sampleRate.IQPairsPerSec - samplesPerSec) > double.Epsilon);
-
         }
 
         protected override AnalyzerIqInfo InternalGetConfig()
@@ -175,23 +185,86 @@ namespace Asv.Tmda.SignalHound
                 Bandwidth = _bandwidth,
                 CenterFrequencyHz = _centerFreqHz,
                 SampleRate = _sampleRate,
+                RefLevel = _refLevel,
             };
         }
 
-        protected override AnalyzerIqPacket InternalRead(AnalyzerIqRequest query)
+        private void CalculateRefLevel()
         {
-            var iqSamples = new float[query.Count * 2];
+            bbStatus status;
+            var refLevel = -40;
+            var iqSamples = new float[10];
             int triggerLen = 16;
             var triggers = new int[triggerLen];
             int dataRemaining = 0, sampleLoss = 0, iqSec = 0, iqNano = 0;
             var sw = new Stopwatch();
             sw.Start();
-            InternalCheckStatus(bb_api.bbGetIQUnpacked(_deviceHandle, iqSamples, query.Count, triggers, triggerLen, query.SkipOldData ? 1 : 0,
-                ref dataRemaining, ref sampleLoss, ref iqSec, ref iqNano));
+            do
+            {
+                bb_api.bbConfigureLevel(_deviceHandle, refLevel, bb_api.BB_AUTO_ATTEN);
+                bb_api.bbInitiate(_deviceHandle, bb_api.BB_STREAMING, bb_api.BB_STREAM_IQ);
+                status = bb_api.bbGetIQUnpacked(_deviceHandle, iqSamples, iqSamples.Length/2, triggers, triggerLen, 1, ref dataRemaining, ref sampleLoss, ref iqSec, ref iqNano);
+                refLevel += 5;
+            } while (status == bbStatus.bbADCOverflow);
+
+            _refLevel = refLevel - 5;
+
+            bb_api.bbConfigureLevel(_deviceHandle, _refLevel, bb_api.BB_AUTO_ATTEN);
+            bb_api.bbInitiate(_deviceHandle, bb_api.BB_STREAMING, bb_api.BB_STREAM_IQ);
+            sw.Stop();
+            Debug.WriteLine($"Found new ref level:{_refLevel} by {sw.Elapsed.TotalMilliseconds:F0} ms");
+            _logger.Info($"Found new ref level:{_refLevel} by {sw.Elapsed.TotalMilliseconds:F0} ms");
+            Thread.Sleep(50);
+
+        }
+
+
+
+
+        protected override AnalyzerIqPacket InternalRead(AnalyzerIqRequest query)
+        {
+            var iqSamples = new float[query.Count * 2];
+            double[] mag = new double[query.Count];
+            int triggerLen = 16;
+            var triggers = new int[triggerLen];
+            int dataRemaining = 0, sampleLoss = 0, iqSec = 0, iqNano = 0;
+            var sw = new Stopwatch();
+
+            start:
+            sw.Start();
+            var status = bb_api.bbGetIQUnpacked(_deviceHandle, iqSamples, query.Count, triggers, triggerLen,  query.SkipOldData ? 1 : 0, ref dataRemaining, ref sampleLoss, ref iqSec, ref iqNano);
+            
+            
+            if (status == bbStatus.bbADCOverflow)
+            {
+                Console.WriteLine("ADC overflow");
+                CalculateRefLevel();
+                goto start;
+            }
+            InternalCheckStatus(status);
+            double summ = 0;
+            for (int i = 0; i < iqSamples.Length; i+=2)
+            {
+                mag[i/2] = Math.Sqrt(iqSamples[i] * iqSamples[i] + iqSamples[i + 1] * iqSamples[i + 1]);
+                summ += mag[i/2];
+            }
+            var levelmW = summ / mag.Length;
+            var leveldBm = 10.0 * Math.Log10(levelmW * levelmW);
+            
+            if (Math.Abs(_prevLevel - leveldBm) > 20 )
+            {
+               CalculateRefLevel();
+               Console.WriteLine("Level chaged");
+                _prevLevel = leveldBm;
+               goto start;
+            }
             sw.Stop();
             return new AnalyzerIqPacket
             {
                 IqSamples = iqSamples,
+                Mag = mag,
+                LevelInmW = leveldBm,
+                LevelIndBm = leveldBm,
                 DataRemaining = dataRemaining,
                 SampleLoss = sampleLoss,
                 ElapsedTime = sw.Elapsed,
@@ -207,6 +280,9 @@ namespace Asv.Tmda.SignalHound
         private void InternalCheckStatus(bbStatus status)
         {
             if (status == bbStatus.bbNoError) return;
+            if (status == bbStatus.bbClampedToLowerLimit) return;
+            if (status == bbStatus.bbClampedToUpperLimit) return;
+
             var err = bb_api.bbGetStatusString(status);
             _logger.Error($"SignalHound device error: {err}");
             throw new Exception(err);

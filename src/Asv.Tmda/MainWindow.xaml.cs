@@ -23,6 +23,8 @@ namespace Asv.Tmda
         public MainWindow()
         {
             InitializeComponent();
+
+
         }
     }
 }

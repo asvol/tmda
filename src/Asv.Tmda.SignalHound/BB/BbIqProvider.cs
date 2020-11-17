@@ -10,9 +10,9 @@ using NLog;
 
 namespace Asv.Tmda.SignalHound
 {
-    [Export(typeof(IAnalyzerIqProvider))]
+    [Export(typeof(IDeviceProvider<IAnalyzerIq>))]
     [PartCreationPolicy(CreationPolicy.Shared)]
-    public class BbIqProvider: IAnalyzerIqProvider
+    public class BbIqProvider: IDeviceProvider<IAnalyzerIq>
     {
         private readonly object _sync = new object();
         public string TypeName => "SignalHound BB Series";
@@ -24,7 +24,7 @@ namespace Asv.Tmda.SignalHound
             LibHelper.CheckLibraryFiles();
         }
 
-        public Task<AnalyzerIqDeviceInfo[]> GetDevices(CancellationToken cancel)
+        public Task<IReadOnlyList<ProviderDeviceInfo>> GetDevices(CancellationToken cancel)
         {
             return Task.Factory.StartNew(() =>
             {
@@ -33,17 +33,17 @@ namespace Asv.Tmda.SignalHound
                     var serials = new int[8];
                     var deviceCount = 0;
                     InternalCheckStatus(bb_api.bbGetSerialNumberList(serials, ref deviceCount));
-                    var result = new AnalyzerIqDeviceInfo[serials.Count(_ => _ > 0)];
+                    var result = new List<ProviderDeviceInfo>();
                     for (var i = 0; i < serials.Length; i++)
                     {
                         if (serials[i] < 0) continue;
-                        result[i] = new AnalyzerIqDeviceInfo
+                        result.Add(new ProviderDeviceInfo
                         {
                             Id = serials[i].ToString(),
                             Name = $"{TypeName} SN:{serials[i]}",
-                        };
+                        });
                     }
-                    return result;
+                    return (IReadOnlyList<ProviderDeviceInfo>)result;
                 }
             },cancel);
         }

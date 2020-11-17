@@ -1,6 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.Composition;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Asv.Tmda.Core;
@@ -8,9 +8,9 @@ using NLog;
 
 namespace Asv.Tmda.SignalHound
 {
-    [Export(typeof(IAnalyzerIqProvider))]
+    [Export(typeof(IDeviceProvider<IAnalyzerIq>))]
     [PartCreationPolicy(CreationPolicy.Shared)]
-    public class SaIqProvider : IAnalyzerIqProvider
+    public class SaIqProvider : IDeviceProvider<IAnalyzerIq>
     {
         private readonly object _sync = new object();
         public string TypeName => "SignalHound SA Series";
@@ -22,7 +22,7 @@ namespace Asv.Tmda.SignalHound
             LibHelper.CheckLibraryFiles();
         }
 
-        public Task<AnalyzerIqDeviceInfo[]> GetDevices(CancellationToken cancel)
+        public Task<IReadOnlyList<ProviderDeviceInfo>> GetDevices(CancellationToken cancel)
         {
             return Task.Factory.StartNew(() =>
             {
@@ -31,17 +31,17 @@ namespace Asv.Tmda.SignalHound
                     var serials = new int[8];
                     var deviceCount = 0;
                     InternalCheckStatus(sa_api.saGetSerialNumberList(serials, ref deviceCount));
-                    var result = new AnalyzerIqDeviceInfo[serials.Count(_ => _ > 0)];
+                    var result = new List<ProviderDeviceInfo>();
                     for (var i = 0; i < serials.Length; i++)
                     {
                         if (serials[i] <= 0) continue;
-                        result[i] = new AnalyzerIqDeviceInfo
+                        result[i] = new ProviderDeviceInfo
                         {
                             Id = serials[i].ToString(),
                             Name = $"{TypeName} SN:{serials[i]}",
                         };
                     }
-                    return result;
+                    return (IReadOnlyList<ProviderDeviceInfo>)result;
                 }
             }, cancel);
         }

@@ -56,7 +56,11 @@ namespace Asv.Tmda.Core
             var linkedCancel = CancellationTokenSource.CreateLinkedTokenSource(cancel, DisposeCancel);
             try
             {
-                await TaskFactory.StartNew(InternalClose, linkedCancel.Token);
+                await TaskFactory.StartNew(()=>
+                {
+                    if (_isOpened == false) return;
+                    InternalClose();
+                }, linkedCancel.Token);
                 _isOpened = false;
             }
             catch (Exception e)

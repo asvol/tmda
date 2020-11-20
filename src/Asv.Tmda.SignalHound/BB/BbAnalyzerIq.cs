@@ -144,7 +144,9 @@ namespace Asv.Tmda.SignalHound
 
         protected override void InternalClose()
         {
-            InternalCheckStatus(bb_api.bbCloseDevice(_deviceHandle));
+            var status = bb_api.bbCloseDevice(_deviceHandle);
+            //if (status == bbStatus.bbDeviceNotOpenErr) return;
+            InternalCheckStatus(status);
         }
 
         protected override AnalyzerIqLimits InternalGetLimits()

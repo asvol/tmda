@@ -35,11 +35,11 @@ namespace Asv.Tmda.SignalHound
                     for (var i = 0; i < serials.Length; i++)
                     {
                         if (serials[i] <= 0) continue;
-                        result[i] = new ProviderDeviceInfo
+                        result.Add(new ProviderDeviceInfo
                         {
                             Id = serials[i].ToString(),
                             Name = $"{TypeName} SN:{serials[i]}",
-                        };
+                        });
                     }
                     return (IReadOnlyList<ProviderDeviceInfo>)result;
                 }

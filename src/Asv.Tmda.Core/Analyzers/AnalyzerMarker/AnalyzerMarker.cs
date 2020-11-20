@@ -29,6 +29,18 @@ namespace Asv.Tmda.Core.Marker
         public AnalyzerMarkerKalmanFilter LevelKalman { get; } = new AnalyzerMarkerKalmanFilter { MeasurementNoise = 0.5, ResetFilterCondition = 2 };
     }
 
+    // public class AnalyzerMarkerConfig1
+    // {
+    //     public double Bandwidth { get; set; } = 7_000;
+    //     public double SampleRate { get; set; } = 486_111.11111 / 32; //9765;
+    //     public double FrequencyHz { get; set; } = 75_000_000;
+    //     public WindowFilterEnum FftWindowFilter { get; set; } = WindowFilterEnum.Hamming;
+    //     public int FftSize { get; set; } = (int)(486_111.11111 / (32 * 20));//9765 / 20;
+    //     public int AmHistorySize { get; set; } = 50;
+    //     public AnalyzerMarkerKalmanFilter AmKalman { get; } = new AnalyzerMarkerKalmanFilter { MeasurementNoise = 0.5, ResetFilterCondition = 1 };
+    //     public AnalyzerMarkerKalmanFilter LevelKalman { get; } = new AnalyzerMarkerKalmanFilter { MeasurementNoise = 0.5, ResetFilterCondition = 2 };
+    // }
+
     public class MarkerValue
     {
         public double Am400 { get; set; }

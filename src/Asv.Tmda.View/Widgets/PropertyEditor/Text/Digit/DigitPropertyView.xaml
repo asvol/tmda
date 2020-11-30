@@ -1,0 +1,33 @@
+﻿<UserControl x:Class="Asv.Avialab.Core.DigitPropertyView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mah="http://metro.mahapps.com/winfx/xaml/controls"
+             mc:Ignorable="d" 
+             d:DesignHeight="44" d:DesignWidth="300">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Asv.Avialab.Core;component/Themes/generic.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+    <mah:NumericUpDown x:Name="text"
+                        IsReadOnly="{Binding IsReadOnly}"
+                           BorderThickness="0"
+                           ToolTip="{Binding Description}"
+                            Background="Transparent"
+                            IsEnabled="{Binding IsEnabled}"
+                            Maximum="{Binding Max}"
+                            mah:TextBoxHelper.SelectAllOnFocus = "True" 
+                            Minimum="{Binding Min}"
+                            Value="{Binding Value, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True, ValidatesOnNotifyDataErrors=True}"
+                            GotFocus="digit_GotFocus"
+                            LostFocus="digit_LostFocus"
+                            Interval="{Binding Interval}"
+                            NumericInputMode="All"
+                            FontFamily="{StaticResource ContentFontFamily}"
+                            FontSize="{StaticResource WidgetValueFontSize}"
+                            StringFormat="{Binding StringFormat}"/>
+</UserControl>

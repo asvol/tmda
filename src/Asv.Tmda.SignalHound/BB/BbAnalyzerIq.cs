@@ -177,7 +177,7 @@ namespace Asv.Tmda.SignalHound
             _bandwidth = 0.0;
             var samplesPerSec = 0;
             InternalCheckStatus(bb_api.bbQueryStreamInfo(_deviceHandle, ref unused, ref _bandwidth, ref samplesPerSec));
-            Debug.Assert(Math.Abs(_sampleRate.IQPairsPerSec - samplesPerSec) > double.Epsilon);
+            //Debug.Assert(Math.Abs(_sampleRate.IQPairsPerSec - samplesPerSec) > double.Epsilon);
         }
 
         protected override AnalyzerIqInfo InternalGetConfig()

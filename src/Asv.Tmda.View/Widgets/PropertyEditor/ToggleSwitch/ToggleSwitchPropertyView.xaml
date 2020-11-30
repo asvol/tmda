@@ -1,0 +1,27 @@
+﻿<UserControl x:Class="Asv.Avialab.Core.ToggleSwitchPropertyView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mah="http://metro.mahapps.com/winfx/xaml/controls"
+             xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
+             mc:Ignorable="d" 
+             d:DesignWidth="354.819" Visibility="{Binding IsVisible,Converter={StaticResource BooleanToVisibilityConverter}}">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Asv.Tmda.View;component/Themes/Generic.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+    <!-- IsChecked="{Binding Value}" -->
+    <!-- OffLabel="{Binding FalseLabel}" -->
+    <!-- OnLabel="{Binding TrueLabel}" -->
+    <mah:ToggleSwitch VerticalAlignment="Center" Grid.Column="2"
+                      HorizontalAlignment="Right"
+                      Margin="5,5,0,5"
+                      IsEnabled="{Binding IsEnabled}"
+                     
+                      FontFamily="{StaticResource MahApps.Fonts.Family.Control}" FontSize="{StaticResource WidgetValueFontSize}"
+                      ContentDirection="LeftToRight" />
+</UserControl>

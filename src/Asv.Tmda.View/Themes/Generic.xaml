@@ -1,0 +1,133 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:options="http://schemas.microsoft.com/winfx/2006/xaml/presentation/options"
+                    xmlns:cal="http://www.caliburnproject.org"
+                    xmlns:system="clr-namespace:System;assembly=mscorlib"
+                    xmlns:controls="http://metro.mahapps.com/winfx/xaml/controls"
+                    xmlns:view="clr-namespace:Asv.Tmda.View">
+    
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Controls.xaml" />
+        <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Fonts.xaml" />
+        <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Themes/Dark.Blue.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+    <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+    <view:InverseBooleanToVisibilityConverter x:Key="InverseBooleanToVisibilityConverter"/>
+    <view:EnumToVisibilityConverter x:Key="EnumToVisibilityConverter"/>
+    <view:InverseBooleanConverter x:Key="InverseBooleanConverter"/>
+    <view:ResourceByStringConverter x:Key="ResourceByStringConverter"/>
+    <view:VisibilityByResourceStringConverter x:Key="VisibilityByResourceStringConverter"/>
+    <view:CombinedBooleanVisibilityConverter x:Key="CombinedBooleanVisibilityConverter" />
+    <view:NullNotVisibleConverter x:Key="NullNotVisibleConverter" />
+    <view:DigitToMinutesConverter x:Key="DigitToMinutesConverter"/>
+    <view:ToStringFormatConverter x:Key="ToStringFormatConverter"/>
+    
+
+
+    <system:Double x:Key="WidgetKeyFontSize" >12</system:Double>
+    <system:Double x:Key="WidgetValueFontSize" >12</system:Double>
+    <system:Double x:Key="WidgetHeaderFontSize">16</system:Double>
+    <system:Double x:Key="WidgetIconSize">18</system:Double>
+    
+    <SolidColorBrush x:Key="SuccessColorBrush" Color="LightSeaGreen" options:Freeze="True"/>
+    <SolidColorBrush x:Key="WarningColorBrush" Color="DarkOrange" options:Freeze="True"/>
+    <SolidColorBrush x:Key="ErrorColorBrush" Color="Red" options:Freeze="True"/>
+    <SolidColorBrush x:Key="UnknownColorBrush" Color="{DynamicResource Gray1}" options:Freeze="True"/>
+
+    <SolidColorBrush x:Key="TxColor" Color="#B2E86C2E"/>
+    <SolidColorBrush x:Key="RxColor" Color="#B22761EF"/>
+
+  
+    <Viewbox x:Key="MenuIcon" x:Shared="False" Margin="0,0,-5,0"  Width="18" Height="18">
+        <Canvas Width="24" Height="24">
+            <Path Data="{Binding IconName,Converter={StaticResource ResourceByStringConverter}}" Fill="{DynamicResource MahApps.Brushes.ThemeForeground}" />
+        </Canvas>
+    </Viewbox>
+    <Style x:Key="MenuItemStyle" TargetType="MenuItem" BasedOn="{StaticResource MahApps.Styles.MenuItem}" >
+        <Setter Property="Visibility" Value="{Binding IsVisible, Converter={StaticResource BooleanToVisibilityConverter}}" />
+        <Setter Property="Header" Value="{Binding DisplayName}" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="IsCheckable" Value="{Binding IsCheckable}" />
+        <Setter Property="IsChecked" Value="{Binding IsChecked}" />
+        <Setter Property="ItemsSource" Value="{Binding Items}" />
+        <Setter Property="StaysOpenOnClick" Value="{Binding StaysOpenOnClick}" />
+        <Setter Property="ItemContainerStyle" Value="{DynamicResource MahApps.Styles.MenuItem}" />
+        <Setter Property="cal:Message.Attach" Value="[Event Click] = [Action Execute()]" />
+        <Setter Property="Icon" Value="{StaticResource MenuIcon}"/>
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding IconName}" Value="{x:Null}">
+                <DataTrigger.Setters>
+                    <Setter Property="Icon" Value="{x:Null}"></Setter>
+                </DataTrigger.Setters>
+            </DataTrigger>
+        </Style.Triggers>
+        
+    </Style>
+
+
+    <Style x:Key="CustomExpanderHeaderStyle"  BasedOn="{StaticResource MahApps.Styles.ToggleButton.ExpanderHeader.Up}"
+       TargetType="{x:Type ToggleButton}">
+        <Setter Property="Height" Value="24"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Margin" Value="0"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ToggleButton}">
+                    <Border Padding="{TemplateBinding Padding}"
+                        Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}">
+                        <Grid Background="Transparent" SnapsToDevicePixels="False">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="19" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Ellipse x:Name="Circle"
+                                 Width="19"
+                                 Height="19"
+                                 HorizontalAlignment="Center"
+                                 VerticalAlignment="Center"
+                                 Stroke="{DynamicResource MahApps.Brushes.ThemeForeground}" />
+                            <Path x:Name="Arrow"
+                              HorizontalAlignment="Center"
+                              VerticalAlignment="Center"
+                              Stroke="{DynamicResource MahApps.Brushes.ThemeForeground}"
+                              StrokeThickness="2"
+                              Data="M 1,1.5 L 4.5,5 L 8,1.5"
+                              SnapsToDevicePixels="false" />
+                            <controls:ContentControlEx Grid.Column="1"
+                                                   Margin="4 0 0 0"
+                                                   Padding="{TemplateBinding Padding}"
+                                                   HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                   VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                                                   Content="{TemplateBinding Content}"
+                                                   ContentCharacterCasing="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=(controls:ControlsHelper.ContentCharacterCasing)}"
+                                                   ContentStringFormat="{TemplateBinding ContentStringFormat}"
+                                                   ContentTemplate="{TemplateBinding ContentTemplate}"
+                                                   ContentTemplateSelector="{TemplateBinding ContentTemplateSelector}"
+                                                   RecognizesAccessKey="True"
+                                                   SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                        </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="true">
+                            <Setter TargetName="Arrow" Property="Data" Value="M 1,4.5  L 4.5,1  L 8,4.5" />
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="true">
+                            <Setter TargetName="Arrow" Property="Stroke" Value="{DynamicResource GrayBrush3}" />
+                            <Setter TargetName="Circle" Property="Stroke" Value="{DynamicResource GrayBrush3}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="true">
+                            <Setter TargetName="Arrow" Property="Stroke" Value="{DynamicResource MahApps.Brushes.ThemeBackground}" />
+                            <Setter TargetName="Circle" Property="Stroke" Value="{DynamicResource MahApps.Brushes.ThemeBackground}" />
+                            <Setter TargetName="Circle" Property="StrokeThickness" Value="2" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+
+</ResourceDictionary>

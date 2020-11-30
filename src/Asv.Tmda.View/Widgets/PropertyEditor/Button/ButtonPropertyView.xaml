@@ -1,0 +1,26 @@
+﻿<UserControl x:Class="Asv.Avialab.Core.ButtonPropertyView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d" 
+             Margin="3"
+             d:DesignHeight="40" d:DesignWidth="300" Visibility="{Binding IsVisible,Converter={StaticResource BooleanToVisibilityConverter}}">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Asv.Avialab.Core;component/Themes/generic.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+    <Button ToolTip="{Binding Description}" x:Name="Click" IsEnabled="{Binding IsEnabled}" >
+        <Button.Content>
+            <StackPanel Orientation="Horizontal">
+                <Viewbox Visibility="{Binding IsIconVisible,Converter={StaticResource BooleanToVisibilityConverter}}" Width="{StaticResource WidgetIconSize}" Margin="5,0,5,0" Height="{StaticResource WidgetIconSize}">
+                    <Path Data="{Binding IconName,Converter={StaticResource ResourceByStringConverter}}" Fill="{DynamicResource MahApps.Brushes.ThemeForeground}"/>
+                </Viewbox>
+                <TextBlock Text="{Binding ButtonText}" FontFamily="{StaticResource ContentFontFamily}" FontSize="{StaticResource WidgetValueFontSize}"/>
+            </StackPanel>
+        </Button.Content>
+    </Button>
+</UserControl>

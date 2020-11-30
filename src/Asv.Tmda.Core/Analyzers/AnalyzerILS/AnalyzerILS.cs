@@ -14,19 +14,16 @@ namespace Asv.Tmda.Core.ILS
     public class AnalyzerILS: IAnalyzerILS
     {
         private readonly IAnalyzerIq _analyzerIq;
-        private KalmanFilterSimple1D _kalman;
         private readonly CancellationTokenSource _cancel = new CancellationTokenSource();
         private int _isDisposed;
-        private IDisposable _timerSubscribe;
+        
         private int _isBusy;
         private AnalyzerILSConfig _config;
         private AnalyzerIqInfo _deviceConfig;
         private double[] _window;
         private readonly RxValue<IlsValue[]> _value = new RxValue<IlsValue[]>();
-        private KalmanFilterSimple1D _kalmanDDM;
-        private KalmanFilterSimple1D _kalmanSDM;
         private AnalyzerILSFreq[] _freq;
-
+        private Thread _thread;
         private CancellationToken DisposeCancel => _cancel.Token;
 
         public AnalyzerILS(IAnalyzerIq analyzerIq)
@@ -40,24 +37,46 @@ namespace Asv.Tmda.Core.ILS
             _config = config;
             await _analyzerIq.Open(DisposeCancel);
             var limits = await _analyzerIq.GetLimits(DisposeCancel);
-            var sampleRate = limits.SampleRates.OrderBy(_ => Math.Abs(_.IQPairsPerSec - _config.Input.SampleRate)).First();
+            var sampleRate = limits.SampleRates.OrderBy(_ => Math.Abs(_.IQPairsPerSec - _config.SampleRate)).First();
             await _analyzerIq.SetConfig(new AnalyzerIqConfig
             {
-                BandwidthHz = _config.Input.Bandwidth,
+                BandwidthHz = _config.Bandwidth,
                 Decimation = sampleRate.Decimation,
                 CenterFrequencyHz = _config.Frequencies.First()
             }, DisposeCancel);
             _deviceConfig = await _analyzerIq.GetConfig(DisposeCancel);
 
             var measurePerSecond = _config.MeasurePerSecond * _config.Frequencies.Count;
-            var readSamples = (int)(_deviceConfig.SampleRate.IQPairsPerSec / measurePerSecond / 30 * 30);
-            var thinningPoints = readSamples / _config.Fft.Size;
+            var readSamples = ((int)(_deviceConfig.SampleRate.IQPairsPerSec / measurePerSecond / 30)) * 30;
+            var thinningPoints = readSamples / _config.FftSize;
             var fftSize = readSamples / thinningPoints;
             readSamples += thinningPoints;
-            _window = WindowFilters.Create(_config.Fft.WindowFilter, fftSize);
+            _window = WindowFilters.Create(_config.FftWindowFilter, fftSize);
             var changeFreq = _config.Frequencies.Count != 1;
             _freq = _config.Frequencies.Select(_ => new AnalyzerILSFreq(_, _config, measurePerSecond, _analyzerIq, _deviceConfig, _window, DisposeCancel, readSamples, thinningPoints, fftSize, changeFreq)).ToArray();
-            _timerSubscribe = Observable.Timer(TimeSpan.FromSeconds(1.0 / config.MeasurePerSecond), TimeSpan.FromSeconds(1.0 / config.MeasurePerSecond)).Subscribe(MeasureTick);
+            _thread = new Thread(MeasureTick);
+            _thread.Start();
+        }
+
+        private async void MeasureTick()
+        {
+            while (true)
+            {
+                if (Interlocked.CompareExchange(ref _isBusy, 1, 0) != 0) return;
+                try
+                {
+                    var values = new IlsValue[_freq.Length];
+                    for (var i = 0; i < _freq.Length; i++)
+                    {
+                        values[i] = await _freq[i].Calculate();
+                    }
+                    _value.OnNext(values);
+                }
+                finally
+                {
+                    Interlocked.Exchange(ref _isBusy, 0);
+                }
+            }
         }
 
         public IObservable<double[]> OnFft(double freq)
@@ -71,31 +90,16 @@ namespace Asv.Tmda.Core.ILS
             return a.OnSignal;
         }
 
-        private async void MeasureTick(long l)
-        {
-            if (Interlocked.CompareExchange(ref _isBusy, 1,0) != 0) return;
-            try
-            {
-                var values = new IlsValue[_freq.Length];
-                for (var i = 0; i < _freq.Length; i++)
-                {
-                    values[i] = await _freq[i].Calculate();
-                }
-                _value.OnNext(values);
-            }
-            finally
-            {
-                Interlocked.Exchange(ref _isBusy, 0);
-            }
-        }
-
-       
-
-       
-
         public async Task Stop()
         {
-            _timerSubscribe?.Dispose();
+            try
+            {
+                _thread?.Abort();
+            }
+            catch (Exception e)
+            {
+
+            }
             await _analyzerIq.Close(DisposeCancel);
         }
 
@@ -115,7 +119,6 @@ namespace Asv.Tmda.Core.ILS
     {
         private readonly double _freqHz;
         private readonly AnalyzerILSConfig _config;
-        private readonly KalmanFilterConfig _kalman;
         private readonly int _measurePerSecond;
         private readonly IAnalyzerIq _analyzerIq;
         private readonly double[] _window;
@@ -124,7 +127,7 @@ namespace Asv.Tmda.Core.ILS
         private KalmanFilterSimple1D _kalmanSDM;
         private readonly int _readSamples;
         private readonly int _thinningPoints;
-        private readonly int _fftsize;
+        private readonly int _fftSize;
         private readonly bool _changeFreq;
         private alglib.complex[] _fftArr;
         private readonly IlsValue[] _resultArray;
@@ -133,7 +136,7 @@ namespace Asv.Tmda.Core.ILS
         private readonly Subject<double[]> _onFft = new Subject<double[]>();
         private readonly Subject<double[]> _onSignal = new Subject<double[]>();
 
-        public AnalyzerILSFreq(double freqHz, AnalyzerILSConfig config, int measurePerSecond, IAnalyzerIq analyzerIq, AnalyzerIqInfo deviceConfig, double[] window, CancellationToken cancel, int readSamples, int thinningPoints, int fftsize, bool changeFreq)
+        public AnalyzerILSFreq(double freqHz, AnalyzerILSConfig config, int measurePerSecond, IAnalyzerIq analyzerIq, AnalyzerIqInfo deviceConfig, double[] window, CancellationToken cancel, int readSamples, int thinningPoints, int fftSize, bool changeFreq)
         {
             _freqHz = freqHz;
             _config = config;
@@ -144,15 +147,15 @@ namespace Asv.Tmda.Core.ILS
             _cancel = cancel;
             _readSamples = readSamples;
             _thinningPoints = thinningPoints;
-            _fftsize = fftsize;
+            _fftSize = fftSize;
             _changeFreq = changeFreq;
             _resultArray = new IlsValue[_thinningPoints];
             for (int i = 0; i < _thinningPoints; i++)
             {
                 _resultArray[i] = new IlsValue();
             }
-            _fftArr = new alglib.complex[_fftsize];
-            _fft = new double[_fftsize];
+            _fftArr = new alglib.complex[_fftSize];
+            _fft = new double[_fftSize];
             _sw = new Stopwatch();
         }
 
@@ -171,7 +174,7 @@ namespace Asv.Tmda.Core.ILS
 
             for (int i = 0; i < _thinningPoints; i++)
             {
-                for (int j = 0; j < _fftsize; j++)
+                for (int j = 0; j < _fftSize; j++)
                 {
                     _fftArr[j] = new alglib.complex(data.Mag[(j*_thinningPoints + i)] * _window[j],0);
                 }

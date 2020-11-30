@@ -1,0 +1,17 @@
+<UserControl x:Class="Asv.Avialab.Core.View.PropertyEditor.Text.Deg.DegreePropertyView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mah="http://metro.mahapps.com/winfx/xaml/controls"
+             mc:Ignorable="d" 
+             d:DesignHeight="30.12" d:DesignWidth="354.819">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Asv.Avialab.Core;component/Themes/generic.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+    <TextBox x:Name="text" IsReadOnly="{Binding IsReadOnly}"  IsEnabled="{Binding IsEnabled}" Background="Transparent" BorderThickness="0"  mah:TextBoxHelper.SelectAllOnFocus="True" Text="{Binding TextValue, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True,ValidatesOnNotifyDataErrors=True}" GotFocus="text_GotFocus" LostFocus="text_LostFocus" />
+</UserControl>

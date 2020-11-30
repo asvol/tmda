@@ -24,11 +24,7 @@ namespace Asv.Tmda.Core.ILS
         public TimeSpan AllTime { get; set; }
     }
 
-    public class DeviceFilterConfig
-    {
-        public double Bandwidth { get; set; } = 5_000;
-        public double SampleRate { get; set; } = 40_000;
-    }
+    
 
     public class KalmanFilterConfig
     {
@@ -36,21 +32,17 @@ namespace Asv.Tmda.Core.ILS
         public double ResetFilterCondition { get; set; } = 3;
     }
 
-
-
-    public class FFTConfig
-    {
-        public WindowFilterEnum WindowFilter { get; set; } = WindowFilterEnum.Hamming;
-        public int Size { get; set; } = 1000;
-    }
-
     public class AnalyzerILSConfig
     {
+        public double Bandwidth { get; set; } = 5_000;
+        public double SampleRate { get; set; } = 40_000;
+        public WindowFilterEnum FftWindowFilter { get; set; } = WindowFilterEnum.Hamming;
+        public int FftSize { get; set; } = 10000;
+        public int MeasurePerSecond { get; set; } = 4;
         public List<double> Frequencies { get; } = new List<double>();
-        public DeviceFilterConfig Input { get; } = new DeviceFilterConfig();
-        public FFTConfig Fft { get; } = new FFTConfig();
         public KalmanFilterConfig KalmanDDM { get; } = new KalmanFilterConfig();
         public KalmanFilterConfig KalmanSDM { get; } = new KalmanFilterConfig();
-        public int MeasurePerSecond { get; set; } = 5;
+        
+        
     }
 }

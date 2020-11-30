@@ -1,0 +1,40 @@
+﻿<UserControl
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:cal="http://www.caliburnproject.org"
+             xmlns:mah="http://metro.mahapps.com/winfx/xaml/controls" x:Class="Asv.Avialab.Core.TabView"
+             mc:Ignorable="d" 
+             d:DesignHeight="300" d:DesignWidth="300" IsTabStop="false" Background="{DynamicResource MahApps.Brushes.ThemeBackground}">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Asv.Tmda.View;component/Themes/Generic.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+    <TabControl Background="{DynamicResource MahApps.Brushes.ThemeBackground}" SelectedItem="{Binding SelectedItem}" Foreground="{DynamicResource MahApps.Brushes.ThemeForeground}" x:Name="Items" TabStripPlacement="Right" mah:TabControlHelper.Underlined="TabPanel" >
+        <TabControl.Resources>
+            <Style BasedOn="{StaticResource {x:Type TabItem}}" TargetType="{x:Type TabItem}">
+                <Setter Property="Background" Value="{DynamicResource MahApps.Brushes.ThemeBackground}" />
+                <!-- <Style.Triggers> -->
+                <!--     ~1~ This does not work. @1@ -->
+                <!--     <Trigger Property="IsSelected" Value="true"> -->
+                <!--         <Setter Property="Foreground" Value="Red" /> -->
+                <!--         <Setter Property="Background" Value="Red" /> -->
+                <!--     </Trigger> -->
+                <!-- </Style.Triggers> -->
+            </Style>
+        </TabControl.Resources>
+        <TabControl.ItemTemplate>
+            <DataTemplate>
+                <Viewbox Width="30" Height="30" Visibility="{Binding IsVisible,Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <Canvas Width="24" Height="24">
+                        <Path Data="{Binding IconName, Converter={StaticResource ResourceByStringConverter}}" Fill="{DynamicResource MahApps.Brushes.ThemeForeground}"/>
+                    </Canvas>
+                </Viewbox>
+            </DataTemplate>
+        </TabControl.ItemTemplate>
+    </TabControl>
+</UserControl>

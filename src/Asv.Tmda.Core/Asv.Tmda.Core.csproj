@@ -51,6 +51,9 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.12.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="NLog, Version=4.0.0.0, Culture=neutral, PublicKeyToken=5120e14c03d0593c, processorArchitecture=MSIL">
       <HintPath>$(SolutionDir)packages\NLog.4.7.5\lib\net45\NLog.dll</HintPath>
     </Reference>
@@ -92,6 +95,11 @@
     <Compile Include="Analyzers\AnalyzerIQ\IAnalyzerIq.cs" />
     <Compile Include="Analyzers\AnalyzerIQ\Base\ThreadSafeAnalyzerIqBase.cs" />
     <Compile Include="Analyzers\AnalyzerIQ\IAnalyzerIqFactory.cs" />
+    <Compile Include="Tools\AssemblyInfoHelper.cs" />
+    <Compile Include="Tools\Extentions\EnumerableExtensions.cs" />
+    <Compile Include="Tools\Extentions\EnumHelper.cs" />
+    <Compile Include="Tools\Extentions\ObservableExtensions.cs" />
+    <Compile Include="Tools\Extentions\StringExtensions.cs" />
     <Compile Include="Factory\DeviceFactoryBase.cs" />
     <Compile Include="Factory\IDeviceFactory.cs" />
     <Compile Include="Factory\IDeviceProvider.cs" />
@@ -113,6 +121,10 @@
     <Compile Include="Tools\alglib\solvers.cs" />
     <Compile Include="Tools\alglib\specialfunctions.cs" />
     <Compile Include="Tools\alglib\statistics.cs" />
+    <Compile Include="Tools\Configuration\IConfiguration.cs" />
+    <Compile Include="Tools\Configuration\Json\JsonConfiguration.cs" />
+    <Compile Include="Tools\Configuration\Json\JsonOneFileConfiguration.cs" />
+    <Compile Include="Tools\ConsoleWelcomePrinter.cs" />
     <Compile Include="Tools\KalmanFilterSimple1D.cs" />
     <Compile Include="Tools\RxValue\IRxValue.cs" />
     <Compile Include="Tools\RxValue\RxValue.cs" />

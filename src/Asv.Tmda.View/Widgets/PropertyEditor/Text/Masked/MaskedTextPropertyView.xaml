@@ -1,0 +1,25 @@
+﻿<UserControl x:Class="Asv.Avialab.Core.MaskedTextPropertyView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mah="http://metro.mahapps.com/winfx/xaml/controls"
+             xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
+             xmlns:Interactions="http://schemas.microsoft.com/xaml/behaviors"
+             xmlns:core="clr-namespace:Asv.Avialab.Core" 
+             xmlns:controlzex="urn:controlzex"
+             mc:Ignorable="d" 
+             d:DesignHeight="30.12" d:DesignWidth="354.819" Visibility="{Binding IsVisible,Converter={StaticResource BooleanToVisibilityConverter}}">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Asv.Avialab.Core;component/Themes/generic.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+    <TextBox x:Name="text" IsReadOnly="{Binding IsReadOnly}" IsEnabled="{Binding IsEnabled}" BorderThickness="0" ToolTip="{Binding ErrorMessage}" Foreground="{DynamicResource MahApps.Brushes.ThemeForeground}" mah:TextBoxHelper.SelectAllOnFocus="True" Background="Transparent" BorderBrush="Transparent" FontFamily="{StaticResource MahApps.Fonts.Family.Control}" FontSize="{StaticResource WidgetValueFontSize}" Grid.Column="2" Text="{Binding Value, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True,ValidatesOnNotifyDataErrors=True}" >
+        <Interactions:Interaction.Behaviors>
+            <controlzex:TextBoxInputMaskBehavior InputMask="{Binding InputMask}" PromptChar="{Binding PromtChar}" />
+        </Interactions:Interaction.Behaviors>
+    </TextBox>
+</UserControl>

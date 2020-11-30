@@ -1,0 +1,29 @@
+﻿<Window x:Class="Asv.Tmda.SplashScreen"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:mah="http://metro.mahapps.com/winfx/xaml/controls"
+        xmlns:view="clr-namespace:Asv.Tmda.View;assembly=Asv.Tmda.View"
+        mc:Ignorable="d"
+        Background="Transparent"
+        AllowsTransparency="True"
+        ShowInTaskbar="False"
+        WindowStyle="None"
+
+        WindowStartupLocation="CenterScreen"
+        Title="SplashScreen" Height="400" Width="600">
+    <Window.Resources>
+        <SolidColorBrush x:Key="BackgroundBrush" Color="Black" Opacity="0.9" />
+        
+    </Window.Resources>
+  
+    <Grid Background="{StaticResource BackgroundBrush}" view:EnableDragHelper.EnableDrag="True">
+        <Image Opacity="0.9" x:Name="___Avialab_component_splash_jpg" Source="/Asv.Tmda;component/splash.jpg" Stretch="Fill"/>
+        <TextBlock  FontSize="70" FontFamily="Segoe UI Light" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,70,0,0" Foreground="White" Text="TMDA"/>
+        <TextBlock  FontSize="30" FontFamily="Segoe UI Light" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,250,0,0" Foreground="White" Text="Test and measurement laboratory"/>
+        <TextBlock  FontSize="18" FontFamily="Segoe UI Light" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,320,0,0" Foreground="Gray" Text="Loading..."/>
+        <TextBlock x:Name="Version" FontSize="14" FontFamily="Segoe UI"  HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="10" Foreground="Gray" Text="v1.0.0"/>
+    </Grid>
+
+</Window>

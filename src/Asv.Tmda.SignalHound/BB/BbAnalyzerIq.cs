@@ -214,7 +214,6 @@ namespace Asv.Tmda.SignalHound
             bb_api.bbConfigureLevel(_deviceHandle, _refLevel, bb_api.BB_AUTO_ATTEN);
             bb_api.bbInitiate(_deviceHandle, bb_api.BB_STREAMING, bb_api.BB_STREAM_IQ);
             sw.Stop();
-            Debug.WriteLine($"Found new ref level:{_refLevel} by {sw.Elapsed.TotalMilliseconds:F0} ms");
             _logger.Info($"Found new ref level:{_refLevel} by {sw.Elapsed.TotalMilliseconds:F0} ms");
             Thread.Sleep(50);
 
@@ -225,6 +224,8 @@ namespace Asv.Tmda.SignalHound
 
         protected override AnalyzerIqPacket InternalRead(AnalyzerIqRequest query)
         {
+            if (this.IsOpened == false) return null;
+
             var iqSamples = new float[query.Count * 2];
             double[] mag = new double[query.Count];
             int triggerLen = 16;
@@ -239,7 +240,7 @@ namespace Asv.Tmda.SignalHound
             
             if (status == bbStatus.bbADCOverflow)
             {
-                Console.WriteLine("ADC overflow");
+                _logger.Info("ADC overflow");
                 CalculateRefLevel();
                 goto start;
             }
@@ -256,7 +257,7 @@ namespace Asv.Tmda.SignalHound
             if (Math.Abs(_prevLevel - leveldBm) > 20 )
             {
                CalculateRefLevel();
-               Console.WriteLine("Level chaged");
+               _logger.Info($"Level changed");
                 _prevLevel = leveldBm;
                goto start;
             }

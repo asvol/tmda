@@ -70,7 +70,12 @@ namespace Asv.Tmda.Core.ILS
                     {
                         values[i] = await _freq[i].Calculate();
                     }
+
                     _value.OnNext(values);
+                }
+                catch (Exception ex)
+                {
+
                 }
                 finally
                 {

@@ -52,13 +52,16 @@ namespace Asv.Tmda.Core.Marker
         public double LevelIndBm { get; set; }
     }
 
-    public interface IAnalyzerMarker
+    public interface IAnalyzerIqMarker
     {
         Task Start(AnalyzerMarkerConfig config);
         Task Stop();
+        IRxValue<MarkerValue> Value { get; }
+        IObservable<double[]> OnFft { get; }
+        IObservable<double[]> OnSignal { get; }
     }
 
-    public class AnalyzerMarker:IAnalyzerMarker
+    public class AnalyzerMarker: IAnalyzerIqMarker
     {
         private readonly IAnalyzerIq _analyzerIq;
         private readonly CancellationTokenSource _cancel = new CancellationTokenSource();
@@ -276,7 +279,15 @@ namespace Asv.Tmda.Core.Marker
         public void Dispose()
         {
             if (Interlocked.CompareExchange(ref _isDisposed, 1, 0) != 0) return;
-            Stop().Wait();
+            try
+            {
+                Stop().Wait();
+            }
+            catch (Exception e)
+            {
+                _logger.Error($"Error to close device: {e.Message}");
+            }
+            
             _cancel.Cancel(false);
             _cancel.Dispose();
         }

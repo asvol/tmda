@@ -186,7 +186,15 @@ namespace Asv.Tmda.Core
                 return await TaskFactory.StartNew(()=>
                 {
                     InternalCheckOpened();
-                    return InternalRead(query);
+                    try
+                    {
+                        return InternalRead(query);
+                    }
+                    catch (Exception e)
+                    {
+                        throw e;
+                    }
+                    
                 }, linkedCancel.Token);
             }
             catch (Exception e)

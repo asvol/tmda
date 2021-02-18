@@ -14,7 +14,6 @@ namespace Asv.Tmda.Core
         private bool _isOpened;
         private static readonly Logger _logger = LogManager.GetCurrentClassLogger();
 
-
         protected CancellationToken DisposeCancel => _cancel.Token;
         protected TaskFactory TaskFactory => _taskFactory;
 

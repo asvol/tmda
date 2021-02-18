@@ -52,7 +52,7 @@ namespace Asv.Tmda.Core.Marker
         public double LevelIndBm { get; set; }
     }
 
-    public interface IAnalyzerIqMarker
+    public interface IAnalyzerIqMarker:IDisposable
     {
         Task Start(AnalyzerMarkerConfig config);
         Task Stop();
@@ -88,6 +88,7 @@ namespace Asv.Tmda.Core.Marker
         private LinkedList<double> _am3000History = new LinkedList<double>();
 
         private Thread _thread;
+        private bool _exitReadingThread;
 
         public AnalyzerMarker(IAnalyzerIq analyzerIq)
         {
@@ -113,6 +114,7 @@ namespace Asv.Tmda.Core.Marker
             _fftArr = new alglib.complex[_config.FftSize];
             _fft = new double[_config.FftSize];
             _window = WindowFilters.Create(_config.FftWindowFilter, _fft.Length);
+            _exitReadingThread = false;
             _thread = new Thread(MeasureTick);
             _thread.Start();
         }
@@ -122,7 +124,7 @@ namespace Asv.Tmda.Core.Marker
 
         private async void MeasureTick()
         {
-            while (true)
+            while (_exitReadingThread == false)
             {
                 if (Interlocked.CompareExchange(ref _isBusy, 1, 0) != 0) return;
                 try
@@ -131,7 +133,8 @@ namespace Asv.Tmda.Core.Marker
 
                     _sw.Start();
 
-                    var data = await _analyzerIq.Read(new AnalyzerIqRequest { Count = (int)readCount, SkipOldData = false }, DisposeCancel);
+                    var data = await _analyzerIq.Read(
+                        new AnalyzerIqRequest {Count = (int) readCount, SkipOldData = false}, DisposeCancel);
 
                     var readDataTime = _sw.Elapsed;
 
@@ -150,7 +153,7 @@ namespace Asv.Tmda.Core.Marker
 
                     if (_onSignal.HasObservers)
                     {
-                        _onSignal.OnNext((double[])data.Mag.Clone());
+                        _onSignal.OnNext((double[]) data.Mag.Clone());
                     }
 
                     if (_onFft.HasObservers)
@@ -159,9 +162,9 @@ namespace Asv.Tmda.Core.Marker
                     }
 
                     var lvl = _fft[0];
-                    var lvl400 = _fft[(int)Math.Round(400.0 / _deviceConfig.SampleRate.IQPairsPerSec * readCount)];
-                    var lvl1300 = _fft[(int)Math.Round((1300 / _deviceConfig.SampleRate.IQPairsPerSec * readCount))];
-                    var lvl3000 = _fft[(int)Math.Round(3000 / _deviceConfig.SampleRate.IQPairsPerSec * readCount)];
+                    var lvl400 = _fft[(int) Math.Round(400.0 / _deviceConfig.SampleRate.IQPairsPerSec * readCount)];
+                    var lvl1300 = _fft[(int) Math.Round((1300 / _deviceConfig.SampleRate.IQPairsPerSec * readCount))];
+                    var lvl3000 = _fft[(int) Math.Round(3000 / _deviceConfig.SampleRate.IQPairsPerSec * readCount)];
 
                     var am400 = 100.0 * lvl400 / lvl * 2;
                     var am1300 = 100.0 * lvl1300 / lvl * 2;
@@ -178,6 +181,7 @@ namespace Asv.Tmda.Core.Marker
                     {
                         _am1300History.RemoveFirst();
                     }
+
                     _am3000History.AddLast(am3000);
                     while (_am3000History.Count > _config.AmHistorySize)
                     {
@@ -193,31 +197,34 @@ namespace Asv.Tmda.Core.Marker
                         _kalmanAm400 = new KalmanFilterSimple1D(_config.AmKalman.MeasurementNoise, 1, 1, 1);
                         _kalmanAm400.SetState(am400, _config.AmKalman.MeasurementNoise);
                     }
+
                     _kalmanAm400.Correct(am400);
                     if (Math.Abs(_kalmanAm400.State - am400) > _config.AmKalman.ResetFilterCondition)
                     {
                         _kalmanAm400 = new KalmanFilterSimple1D(_config.AmKalman.MeasurementNoise, 1, 1, 1);
                         _kalmanAm400.SetState(am400, _config.AmKalman.MeasurementNoise);
                     }
-                    
-                    
+
+
                     if (_kalmanAm1300 == null)
                     {
                         _kalmanAm1300 = new KalmanFilterSimple1D(_config.AmKalman.MeasurementNoise, 1, 1, 1);
                         _kalmanAm1300.SetState(am1300, _config.AmKalman.MeasurementNoise);
                     }
+
                     _kalmanAm1300.Correct(am1300);
                     if (Math.Abs(_kalmanAm1300.State - am1300) > _config.AmKalman.ResetFilterCondition)
                     {
                         _kalmanAm1300 = new KalmanFilterSimple1D(_config.AmKalman.MeasurementNoise, 1, 1, 1);
                         _kalmanAm1300.SetState(am1300, _config.AmKalman.MeasurementNoise);
                     }
-                    
+
                     if (_kalmanAm3000 == null)
                     {
                         _kalmanAm3000 = new KalmanFilterSimple1D(_config.AmKalman.MeasurementNoise, 1, 1, 1);
                         _kalmanAm3000.SetState(am3000, _config.AmKalman.MeasurementNoise);
                     }
+
                     _kalmanAm3000.Correct(am3000);
                     if (Math.Abs(_kalmanAm3000.State - am3000) > _config.AmKalman.ResetFilterCondition)
                     {
@@ -231,6 +238,7 @@ namespace Asv.Tmda.Core.Marker
                         _kalmanLevel = new KalmanFilterSimple1D(_config.LevelKalman.MeasurementNoise, 1, 1, 1);
                         _kalmanLevel.SetState(data.LevelIndBm, _config.LevelKalman.MeasurementNoise);
                     }
+
                     _kalmanLevel.Correct(data.LevelIndBm);
                     if (Math.Abs(_kalmanLevel.State - data.LevelIndBm) > _config.LevelKalman.ResetFilterCondition)
                     {
@@ -239,7 +247,7 @@ namespace Asv.Tmda.Core.Marker
                     }
 
                     _sw.Stop();
-                    
+
                     _value.OnNext(new MarkerValue
                     {
                         Am400 = _kalmanAm400.State,
@@ -251,6 +259,15 @@ namespace Asv.Tmda.Core.Marker
                         AllTime = _sw.Elapsed,
                     });
 
+                }
+                catch (ObjectDisposedException ex)
+                {
+                    _logger.Warn(ex,$"Error to read data from device => break read thread: {ex.Message}");
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    _logger.Error(ex,$"Error to read data from device:{ex.Message}");
                 }
                 finally
                 {
@@ -264,7 +281,8 @@ namespace Asv.Tmda.Core.Marker
         {
             try
             {
-                _thread?.Abort();
+                _exitReadingThread = true;
+                //_thread?.Abort();
             }
             catch (Exception e)
             {
